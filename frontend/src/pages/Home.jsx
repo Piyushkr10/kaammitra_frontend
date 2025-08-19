@@ -119,7 +119,7 @@ export default function Home({
       {/* Hero Section */}
       <section className="relative h-full w-full rounded-b-3xl overflow-hidden">
         <img
-          src="https://placehold.co/1200x400/525252/FFF?text=Hero+Image"
+          src="hero2.png"
           alt="Hero"
           className="w-full h-full object-cover"
         />
