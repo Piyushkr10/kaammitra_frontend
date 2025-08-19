@@ -6,7 +6,7 @@ const ServiceDetail = ({ darkMode }) => {
   const { serviceName } = useParams();
   const decodedName = decodeURIComponent(serviceName);
 
-  // Detailed info for known services
+  // Known services with detailed info
   const serviceDetails = {
     "Cleaning Services": {
       img: "https://placehold.co/800x400/525252/FFF?text=Cleaning+Services",
@@ -19,7 +19,7 @@ const ServiceDetail = ({ darkMode }) => {
         "Satisfaction guarantee",
       ],
     },
-    Cooking: {
+    "Cooking Services": {
       img: "https://placehold.co/800x400/525252/FFF?text=Cooking+Services",
       description:
         "Hire a personal chef to prepare delicious and healthy meals tailored to your dietary needs. Perfect for busy individuals, families, or special occasions.",
@@ -63,9 +63,31 @@ const ServiceDetail = ({ darkMode }) => {
         "Photo & video editing included",
       ],
     },
+    "Plumbing Services": {
+      img: "https://placehold.co/800x400/525252/FFF?text=Plumbing+Services",
+      description:
+        "Expert plumbing services to fix leaks, install fixtures, and handle emergencies quickly and reliably.",
+      features: [
+        "Licensed plumbers",
+        "Emergency support available",
+        "Affordable pricing",
+        "Guaranteed service quality",
+      ],
+    },
+    "Electrical Repair": {
+      img: "https://placehold.co/800x400/525252/FFF?text=Electrical+Repair",
+      description:
+        "Reliable electrical repair and installation services by certified experts.",
+      features: [
+        "Certified electricians",
+        "Fast and safe repairs",
+        "24/7 service available",
+        "Transparent pricing",
+      ],
+    },
   };
 
-  // Generic fallback for all other services
+  // Fallback service for dynamic routes
   const fallback = {
     img: `https://placehold.co/800x400/525252/FFF?text=${encodeURIComponent(
       decodedName
@@ -93,7 +115,7 @@ const ServiceDetail = ({ darkMode }) => {
             darkMode ? "bg-gray-800" : "bg-white"
           } rounded-xl shadow-lg overflow-hidden`}
         >
-          {/* Banner Image */}
+          {/* Banner Image with Overlay */}
           <div className="relative">
             <img
               src={service.img}
@@ -113,7 +135,7 @@ const ServiceDetail = ({ darkMode }) => {
               {service.description}
             </p>
 
-            {/* Features */}
+            {/* Features List */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
               {service.features.map((feature, index) => (
                 <div key={index} className="flex items-start gap-3">
@@ -142,16 +164,15 @@ const ServiceDetail = ({ darkMode }) => {
               </div>
             </div>
 
-            {/* CTA Button */}
+            {/* Call To Action Button */}
             <div className="mt-8 text-center">
               <Link
-  to={`/booking/${encodeURIComponent(decodedName)}`}
-  className="flex items-center justify-center mx-auto gap-2 bg-blue-600 text-white px-4 py-2 rounded-full font-bold text-lg hover:bg-blue-700 transition-colors shadow-md"
->
-  <PhoneCall size={16} />
-  Book This Service Now
-</Link>
-
+                to={`/booking/${encodeURIComponent(decodedName)}`}
+                className="flex items-center justify-center mx-auto gap-2 bg-blue-600 text-white px-6 py-3 rounded-full font-bold text-lg hover:bg-blue-700 transition-colors shadow-md"
+              >
+                <PhoneCall size={18} />
+                Book This Service Now
+              </Link>
             </div>
           </div>
         </div>
