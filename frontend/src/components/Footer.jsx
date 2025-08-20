@@ -1,93 +1,108 @@
-import React, { useState } from "react";
+import React from "react";
+import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Mail, Phone, MapPin } from "lucide-react";
 
-export default function Footer() {
-  const [email, setEmail] = useState("");
-
-  const handleSubscribe = () => {
-    if (!email) {
-      alert("Please enter your email.");
-      return;
-    }
-    alert(`Subscribed with ${email}`);
-    setEmail("");
-  };
+export default function Footer({ darkMode }) {
+  const { t } = useTranslation();
 
   return (
-    <footer className="bg-gradient-to-b from-gray-900 to-gray-800 text-white py-10">
+    <footer
+      className="bg-gray-200 text-gray-700 dark:bg-gray-900 dark:text-gray-400
+                 py-12 transition-colors duration-300"
+    >
       <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Company Info */}
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="bg-blue-600 text-white rounded-full px-3 py-1 font-bold">K</div>
-            <span className="font-bold text-lg">Kaam Mitra</span>
-          </div>
-          <p className="mb-4 text-sm">
-            Connecting you with trusted service providers across India. Your reliable partner for all home and professional services.
+        <div className="flex flex-col items-center md:items-start text-center md:text-left">
+          <Link to="/" className="flex items-center gap-2 mb-4">
+            <img
+              src={darkMode ? "/logo2.png" : "/logo.png"}
+              alt="KaamMitra"
+              className="h-10 w-auto"
+            />
+          </Link>
+          <p className="text-sm">
+            {t('footer.copyright')}
           </p>
-          <div className="flex items-center gap-2 mb-2">
-            <Mail size={16} /> support@kaammitra.com
-          </div>
-          <div className="flex items-center gap-2 mb-2">
-            <Phone size={16} /> +91 98765 43210
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPin size={16} /> Mumbai, Delhi, Bangalore & 50+ cities
-          </div>
+        </div>
+
+        {/* Services Links */}
+        <div className="text-center md:text-left">
+          <h3 className="text-lg font-bold text-blue-700 dark:text-blue-500 mb-4">
+            {t('footer.services_title')}
+          </h3>
+          <ul className="space-y-2 text-sm">
+            <li>
+              <Link to="/service/Plumbing" className="hover:text-blue-700 dark:hover:text-blue-500">
+                Plumbing
+              </Link>
+            </li>
+            <li>
+              <Link to="/service/Electrical" className="hover:text-blue-700 dark:hover:text-blue-500">
+                Electrical
+              </Link>
+            </li>
+            <li>
+              <Link to="/service/Cleaning" className="hover:text-blue-700 dark:hover:text-blue-500">
+                Cleaning
+              </Link>
+            </li>
+            <li>
+              <Link to="/moreservices" className="hover:text-blue-700 dark:hover:text-blue-500">
+                {t('more_services')}
+              </Link>
+            </li>
+          </ul>
         </div>
 
         {/* Quick Links */}
-        <div>
-          <h3 className="font-bold mb-4">Quick Links</h3>
-          <ul className="space-y-2">
-            <li><a href="/about" className="hover:underline">About Us</a></li>
-            <li><a href="/how-it-works" className="hover:underline">How It Works</a></li>
-            <li><a href="/all-services" className="hover:underline">All Services</a></li>
-            <li><a href="/contact" className="hover:underline">Contact</a></li>
+        <div className="text-center md:text-left">
+          <h3 className="text-lg font-bold text-blue-700 dark:text-blue-500 mb-4">
+            {t('footer.quick_links_title')}
+          </h3>
+          <ul className="space-y-2 text-sm">
+            <li>
+              <Link to="/about" className="hover:text-blue-700 dark:hover:text-blue-500">
+                {t('footer.about')}
+              </Link>
+            </li>
+            <li>
+              <Link to="/contact" className="hover:text-blue-700 dark:hover:text-blue-500">
+                {t('footer.contact')}
+              </Link>
+            </li>
+            <li>
+              <Link to="/privacy" className="hover:text-blue-700 dark:hover:text-blue-500">
+                {t('footer.privacy')}
+              </Link>
+            </li>
+            <li>
+              <Link to="/terms" className="hover:text-blue-700 dark:hover:text-blue-500">
+                {t('footer.terms')}
+              </Link>
+            </li>
           </ul>
         </div>
 
-        {/* Services */}
-        <div>
-          <h3 className="font-bold mb-4">Services</h3>
-          <ul className="space-y-2">
-            <li><a href="/services/cleaning" className="hover:underline">Cleaning Services</a></li>
-            <li><a href="/services/photography" className="hover:underline">Photography</a></li>
-            <li><a href="/services/cooking" className="hover:underline">Cooking Services</a></li>
-            <li><a href="/services" className="hover:underline">Browse All</a></li>
-          </ul>
-        </div>
-
-        {/* Support */}
-        <div>
-          <h3 className="font-bold mb-4">Support</h3>
-          <ul className="space-y-2">
-            <li><a href="/help" className="hover:underline">Help Center</a></li>
-            <li><a href="/safety" className="hover:underline">Safety Guidelines</a></li>
-            <li><a href="/terms" className="hover:underline">Terms of Service</a></li>
-            <li><a href="/privacy" className="hover:underline">Privacy Policy</a></li>
-          </ul>
-        </div>
-      </div>
-
-      {/* Subscribe */}
-      <div className="container mx-auto px-6 mt-10 border-t border-gray-700 pt-6">
-        <h3 className="font-bold mb-2">Stay Updated</h3>
-        <p className="text-sm mb-4">Get the latest updates on new services and special offers.</p>
-        <div className="flex gap-2">
-          <input
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="flex-grow px-4 py-2 rounded-md text-black"
-          />
-          <button
-            onClick={handleSubscribe}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md"
-          >
-            Subscribe
-          </button>
+        {/* Contact Us */}
+        <div className="text-center md:text-left">
+          <h3 className="text-lg font-bold text-blue-700 dark:text-blue-500 mb-4">
+            {t('footer.contact_us_title')}
+          </h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-center md:justify-start gap-2">
+              <MapPin size={16} />
+              <span>Patna, Bihar, India</span>
+            </div>
+            <div className="flex items-center justify-center md:justify-start gap-2">
+              <Phone size={16} />
+              <span>+91 98765 43210</span>
+            </div>
+            <div className="flex items-center justify-center md:justify-start gap-2">
+              <Mail size={16} />
+              <span>info@kaammitra.in</span>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

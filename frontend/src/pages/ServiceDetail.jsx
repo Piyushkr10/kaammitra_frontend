@@ -2,7 +2,7 @@ import React from "react";
 import { Link, useParams } from "react-router-dom";
 import { Star, Clock, MapPin, PhoneCall, CheckCircle } from "lucide-react";
 
-const ServiceDetail = ({ darkMode }) => {
+const ServiceDetail = () => {
   const { serviceName } = useParams();
   const decodedName = decodeURIComponent(serviceName);
 
@@ -105,15 +105,13 @@ const ServiceDetail = ({ darkMode }) => {
 
   return (
     <div
-      className={`${
-        darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-800"
-      } min-h-screen font-sans`}
+      className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-white
+                 min-h-screen font-sans transition-colors duration-300"
     >
       <div className="container mx-auto px-4 py-8">
         <div
-          className={`${
-            darkMode ? "bg-gray-800" : "bg-white"
-          } rounded-xl shadow-lg overflow-hidden`}
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden
+                     transition-colors duration-300"
         >
           {/* Banner Image with Overlay */}
           <div className="relative">

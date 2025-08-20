@@ -1,7 +1,7 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
-export default function MoreServices({ darkMode }) {
+export default function MoreServices() {
   // Full service list
   const allServices = [
     { name: "Cleaning Services", img: "https://placehold.co/400x200/525252/FFF?text=Cleaning+Services" },
@@ -34,11 +34,10 @@ export default function MoreServices({ darkMode }) {
 
   return (
     <div
-      className={`${
-        darkMode ? "bg-black text-white" : "bg-gray-50 text-gray-800"
-      } min-h-screen font-sans py-10`}
+      className="bg-gray-50 text-gray-800 dark:bg-black dark:text-white
+                 min-h-screen font-sans py-10 transition-colors duration-300"
     >
-      <h1 className="text-4xl font-bold text-center text-blue-600 mb-8">
+      <h1 className="text-4xl font-bold text-center text-blue-600 dark:text-blue-400 mb-8">
         Explore More Services
       </h1>
 
@@ -48,9 +47,8 @@ export default function MoreServices({ darkMode }) {
           <Link
             to={`/service/${encodeURIComponent(service.name)}`}
             key={service.name}
-            className={`${
-              darkMode ? "border-gray-700 bg-gray-900" : "border-gray-200 bg-white"
-            } border rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition duration-300 cursor-pointer block`}
+            className="border rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition duration-300 cursor-pointer block
+                       border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
           >
             <img
               src={service.img}
@@ -68,11 +66,12 @@ export default function MoreServices({ darkMode }) {
           <button
             key={index + 1}
             onClick={() => setCurrentPage(index + 1)}
-            className={`px-4 py-2 rounded-lg border ${
-              currentPage === index + 1
-                ? "bg-blue-600 text-white"
-                : "bg-white text-gray-700"
-            } hover:bg-blue-500 hover:text-white transition`}
+            className={`px-4 py-2 rounded-lg border transition-colors duration-300
+                        ${
+                          currentPage === index + 1
+                            ? "bg-blue-600 text-white"
+                            : "bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                        }`}
           >
             {index + 1}
           </button>
