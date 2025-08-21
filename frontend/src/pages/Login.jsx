@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { XCircle } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { XCircle, ArrowLeft } from "lucide-react";
 
-export default function Login() {
+export default function Login({ onLoginComplete, registeredUsers }) { // Add registeredUsers prop
   const [mobile, setMobile] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState(["", "", "", ""]);
@@ -10,11 +10,17 @@ export default function Login() {
   const inputRefs = useRef([]);
   const navigate = useNavigate();
 
-  // Handle sending OTP, validates mobile number and updates UI
+  // Handle sending OTP, validates mobile number and checks for registration
   const handleSendOtp = () => {
     if (mobile.length === 10) {
-      setOtpSent(true);
-      setMessage("");
+      // Check if the mobile number is registered
+      const isRegistered = registeredUsers.some(user => user.mobile === mobile);
+      if (isRegistered) {
+        setOtpSent(true);
+        setMessage("");
+      } else {
+        setMessage("This mobile number is not registered. Please sign up first.");
+      }
     } else {
       setMessage("Please enter a valid 10-digit mobile number.");
     }
@@ -36,9 +42,14 @@ export default function Login() {
   const handleVerifyOtp = () => {
     if (otp.join("").length === 4) {
       setMessage("");
-      // In a real app, you would verify the OTP here with an API call
-      // For this demo, we'll just navigate to the home page
-      navigate("/");
+      const user = registeredUsers.find(user => user.mobile === mobile);
+      if (user) {
+        // In a real app, you would verify the OTP here with an API call
+        onLoginComplete(user.name, user.mobile); // Update the global state
+        navigate("/"); // Redirect to the home page
+      } else {
+        setMessage("Verification failed. Please try again.");
+      }
     } else {
       setMessage("Please enter the complete 4-digit OTP.");
     }
@@ -46,7 +57,10 @@ export default function Login() {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300 px-4">
-      <div className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white p-6 rounded-xl shadow-md w-full max-w-md transition-colors duration-300">
+      <div className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white p-6 rounded-xl shadow-md w-full max-w-md transition-colors duration-300 relative">
+        <Link to="/" className="absolute top-4 left-4 text-gray-800 dark:text-white hover:text-gray-600 dark:hover:text-gray-300">
+          <ArrowLeft size={24} />
+        </Link>
         <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
         
         {/* Message Box for alerts */}
@@ -76,6 +90,9 @@ export default function Login() {
             >
               Send OTP
             </button>
+            <p className="mt-4 text-center text-sm text-gray-700 dark:text-gray-300">
+              New to our app? <Link to="/signup" className="text-blue-600 dark:text-blue-400 hover:underline">Sign up here</Link>
+            </p>
           </>
         ) : (
           <>

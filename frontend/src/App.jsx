@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { I18nextProvider } from "react-i18next";
-import i18n from "./i18n"; // Import your i18n configuration
+import i18n from "./i18n";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -23,6 +23,7 @@ export default function App() {
   const [profileImage, setProfileImage] = useState("");
   const [popupMessage, setPopupMessage] = useState("");
   const [showPopup, setShowPopup] = useState(false);
+  const [registeredUsers, setRegisteredUsers] = useState([]); // New state for registered users
   const [darkMode, setDarkMode] = useState(
     localStorage.getItem("theme") === "dark" ||
     (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)
@@ -50,11 +51,20 @@ export default function App() {
     setTimeout(() => setShowPopup(false), 3000);
   };
 
-  const handleAuthComplete = (name, image, message) => {
+  const handleRegistrationComplete = (name, mobile) => {
+    // Add the new user to our mock list of registered users
+    setRegisteredUsers([...registeredUsers, { name, mobile }]);
     setUserName(name);
-    setProfileImage(image);
+    setProfileImage(""); // Placeholder for profile image
     setIsLoggedIn(true);
-    triggerPopup(message);
+    triggerPopup("Registration successful! You are now logged in.");
+  };
+
+  const handleLoginComplete = (name, mobile) => {
+    // This is called from the login component to set the user state
+    setUserName(name);
+    setIsLoggedIn(true);
+    triggerPopup("Login successful!");
   };
 
   const handleLogout = () => {
@@ -70,7 +80,7 @@ export default function App() {
 
   const ProtectedRoute = ({ children }) => {
     if (!isLoggedIn) {
-      return <Navigate to="/signup" replace />;
+      return <Navigate to="/login" replace />; // Redirect to login, not signup
     }
     return children;
   };
@@ -87,6 +97,7 @@ export default function App() {
             toggleDarkMode={toggleDarkMode}
             menuOpen={menuOpen}
             toggleMenu={toggleMenu}
+            handleLogout={handleLogout}
           />
 
           {showPopup && <Popup message={popupMessage} />}
@@ -105,8 +116,8 @@ export default function App() {
                 />
               }
             />
-            <Route path="/signup" element={<SignUp onRegistrationComplete={handleAuthComplete} />} />
-            <Route path="/login" element={<Login onLoginComplete={handleAuthComplete} />} />
+            <Route path="/signup" element={<SignUp onRegistrationComplete={handleRegistrationComplete} />} />
+            <Route path="/login" element={<Login onLoginComplete={handleLoginComplete} registeredUsers={registeredUsers} />} />
             <Route path="/logout" element={<LogOut onLogout={handleLogout} />} />
 
             {/* Protected Routes */}

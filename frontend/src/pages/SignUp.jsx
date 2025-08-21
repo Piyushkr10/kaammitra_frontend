@@ -188,7 +188,7 @@ export default function SignUp({ onRegistrationComplete }) {
 
   const handleAddressSubmit = (addressData) => {
     // In a real app, this data would be sent to a backend
-    onRegistrationComplete(fullName);
+    onRegistrationComplete(fullName, phoneNumber); // Pass both name and mobile to App.js
     navigate("/"); // Redirect to Home Page
   };
 

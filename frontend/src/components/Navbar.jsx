@@ -31,6 +31,10 @@ export default function Navbar({
   const [servicesOpen, setServicesOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  // Create refs for each dropdown
+  const servicesRef = useRef(null);
+  const langRef = useRef(null);
   const profileRef = useRef(null);
   const location = useLocation();
 
@@ -39,23 +43,64 @@ export default function Navbar({
 
   useEffect(() => {
     function handleClickOutside(event) {
+      if (
+        servicesRef.current &&
+        !servicesRef.current.contains(event.target)
+      ) {
+        setServicesOpen(false);
+      }
+      if (
+        langRef.current &&
+        !langRef.current.contains(event.target)
+      ) {
+        setLangOpen(false);
+      }
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setProfileOpen(false);
       }
     }
+
+    function handleScrollClose() {
+      if (servicesOpen || langOpen || profileOpen) {
+        setServicesOpen(false);
+        setLangOpen(false);
+        setProfileOpen(false);
+      }
+    }
+
+    // Add event listeners for both outside clicks and scrolling
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    window.addEventListener("scroll", handleScrollClose);
+
+    // Clean up event listeners on component unmount
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScrollClose);
+    };
+  }, [servicesOpen, langOpen, profileOpen]); // Dependency array to re-run effect when state changes
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
     setLangOpen(false);
   };
 
+  const getLanguageName = (code) => {
+    switch (code) {
+      case "en":
+        return "English";
+      case "hi":
+        return "Hindi";
+      case "bn":
+        return "Bengali";
+      default:
+        return "Language";
+    }
+  };
+
   return (
     <header
       className="bg-gray-300 text-blue-700 dark:bg-gray-900 dark:text-white
-                 shadow sticky top-0 z-50 transition-colors duration-300"
+                     shadow sticky top-0 z-50 transition-colors duration-300"
     >
       <div className="container mx-auto px-6 py-3 flex justify-between items-center">
         {/* Logo and Menu Toggle */}
@@ -84,18 +129,17 @@ export default function Navbar({
               </Link>
 
               {/* Services Dropdown */}
-              <div
-                className="relative"
-                onMouseEnter={() => setServicesOpen(true)}
-                onMouseLeave={() => setServicesOpen(false)}
-              >
-                <button className="flex items-center gap-1 font-medium">
+              <div className="relative" ref={servicesRef}>
+                <button
+                  className="flex items-center gap-1 font-medium"
+                  onClick={() => setServicesOpen(!servicesOpen)}
+                >
                   {t("services")} <ChevronDown size={16} />
                 </button>
                 {servicesOpen && (
                   <div
                     className="absolute top-full mt-1 rounded-md shadow-lg w-56 z-50
-                             bg-white dark:bg-gray-800"
+                                 bg-white dark:bg-gray-800"
                   >
                     {SERVICES.slice(0, 10).map((name) => (
                       <Link
@@ -181,36 +225,35 @@ export default function Navbar({
           )}
 
           {/* Language Dropdown */}
-          <div
-            className="relative"
-            onMouseEnter={() => setLangOpen(true)}
-            onMouseLeave={() => setLangOpen(false)}
-          >
-            <button className="flex items-center gap-1 font-medium">
-              {t(`languages.${i18n.language}`)} <ChevronDown size={16} />
+          <div className="relative" ref={langRef}>
+            <button
+              className="flex items-center gap-1 font-medium"
+              onClick={() => setLangOpen(!langOpen)}
+            >
+              {getLanguageName(i18n.language)} <ChevronDown size={16} />
             </button>
             {langOpen && (
               <div
                 className="absolute top-full mt-1 w-32 rounded-md shadow-lg z-50
-                             bg-white dark:bg-gray-800"
+                                 bg-white dark:bg-gray-800"
               >
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                   onClick={() => changeLanguage("en")}
                 >
-                  {t("languages.english")}
+                  English
                 </button>
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                   onClick={() => changeLanguage("hi")}
                 >
-                  {t("languages.hindi")}
+                  Hindi
                 </button>
                 <button
                   className="block w-full text-left px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                   onClick={() => changeLanguage("bn")}
                 >
-                  {t("languages.bengali")}
+                  Bengali
                 </button>
               </div>
             )}
@@ -220,7 +263,7 @@ export default function Navbar({
           <button
             onClick={toggleDarkMode}
             className="p-2 rounded-full hover:opacity-80 transition-colors
-                         bg-gray-200 text-blue-700 dark:bg-gray-800 dark:text-white"
+                                bg-gray-200 text-blue-700 dark:bg-gray-800 dark:text-white"
           >
             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>

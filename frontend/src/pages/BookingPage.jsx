@@ -7,6 +7,13 @@ const BookingPage = ({ darkMode }) => {
   const decodedService = decodeURIComponent(serviceName); // ✅ Decode URL param
   const navigate = useNavigate();
 
+  // Get current date for min attribute on date input
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+  const dd = String(today.getDate()).padStart(2, '0');
+  const currentDate = `${yyyy}-${mm}-${dd}`;
+
   const [formData, setFormData] = useState({
     service: "",
     serviceType: "",
@@ -30,6 +37,37 @@ const BookingPage = ({ darkMode }) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+  
+  // ✅ New function to handle date change and validate
+  const handleDateChange = (e) => {
+    const selectedDate = e.target.value;
+    setFormData({ ...formData, date: selectedDate });
+    // Reset time if a new date is selected
+    if (selectedDate !== formData.date) {
+      setFormData(prev => ({ ...prev, time: '' }));
+    }
+  };
+  
+  // ✅ New function to handle time change and validate
+  const handleTimeChange = (e) => {
+    const selectedTime = e.target.value;
+    const now = new Date();
+    const selectedDateTime = new Date(`${formData.date}T${selectedTime}`);
+
+    // If the selected date is today, check if the selected time is in the past
+    if (formData.date === currentDate && selectedDateTime < now) {
+      setPopup({
+        show: true,
+        type: "error",
+        message: "🚫 Please select a time in the future.",
+      });
+      setFormData({ ...formData, time: "" }); // Clear the invalid time
+      setTimeout(() => setPopup({ show: false, type: "", message: "" }), 3000);
+    } else {
+      setFormData({ ...formData, time: selectedTime });
+    }
+  };
+
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -45,8 +83,26 @@ const BookingPage = ({ darkMode }) => {
       setTimeout(() => setPopup({ show: false, type: "", message: "" }), 3000);
       return;
     }
+    
+    // ✅ Final validation to prevent past bookings
+    const selectedDateTime = new Date(`${date}T${time}`);
+    const now = new Date();
+    if (selectedDateTime < now) {
+      setPopup({
+        show: true,
+        type: "error",
+        message: "🚫 The date or time you selected is in the past. Please choose a future time.",
+      });
+      setTimeout(() => setPopup({ show: false, type: "", message: "" }), 3000);
+      return;
+    }
 
     console.log("Booking submitted:", formData);
+
+    // ✅ Save the new booking to localStorage
+    const storedBookings = JSON.parse(localStorage.getItem("bookings")) || [];
+    const updatedBookings = [...storedBookings, formData];
+    localStorage.setItem("bookings", JSON.stringify(updatedBookings));
 
     // Success popup
     setPopup({
@@ -189,15 +245,16 @@ const BookingPage = ({ darkMode }) => {
                 type="date"
                 name="date"
                 value={formData.date}
-                onChange={handleChange}
+                onChange={handleDateChange} // Use new handler
                 className="w-1/2 border rounded-md p-2 bg-gray-200"
+                min={currentDate} // Restrict past dates
                 required
               />
               <input
                 type="time"
                 name="time"
                 value={formData.time}
-                onChange={handleChange}
+                onChange={handleTimeChange} // Use new handler
                 className="w-1/2 border rounded-md p-2 bg-gray-200"
                 required
               />

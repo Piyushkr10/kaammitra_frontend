@@ -13,6 +13,9 @@
   "our_services": "Our Services",
   "starting_from": "Starting from",
   "welcome_user": "Welcome, {{userName}}!",
+  "emergency_title": "Need Emergency Services ? Call 24/7 Emergency",
+  "request_now": "Request Now",
+  "top_providers": "Our Top Providers",
   "languages": {
     "english": "English",
     "hindi": "Hindi",
@@ -28,5 +31,25 @@
     "privacy": "Privacy Policy",
     "terms": "Terms & Conditions",
     "copyright": "© 2024 KaamMitra. All rights reserved."
+  },
+  "services_list": {
+    "all": [
+      "Plumbing",
+      "Electrical",
+      "Carpentry",
+      "Cleaning",
+      "Painting",
+      "Gardening",
+      "AC Repair",
+      "Cooking",
+      "Photography",
+      "Beauty Services"
+    ],
+    "cleaning": "Cleaning",
+    "photography": "Photography",
+    "cooking": "Cooking",
+    "plumbing": "Plumbing",
+    "electrical": "Electrical",
+    "beauty": "Beauty"
   }
 }
