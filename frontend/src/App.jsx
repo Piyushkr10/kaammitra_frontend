@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { I18nextProvider } from "react-i18next";
 import i18n from "./i18n";
-
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Popup from "./components/Popup";
@@ -15,7 +14,7 @@ import BookingPage from "./pages/BookingPage";
 import MyBookingHistory from "./pages/MyBookingHistory";
 import Settings from "./pages/Settings";
 import LogOut from "./pages/LogOut";
-import TokenPayment from "./pages/TokenPayment";
+import PaymentPage from "./components/PaymentPage";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -23,7 +22,7 @@ export default function App() {
   const [profileImage, setProfileImage] = useState("");
   const [popupMessage, setPopupMessage] = useState("");
   const [showPopup, setShowPopup] = useState(false);
-  const [registeredUsers, setRegisteredUsers] = useState([]); // New state for registered users
+  const [registeredUsers, setRegisteredUsers] = useState([]);
   const [darkMode, setDarkMode] = useState(
     localStorage.getItem("theme") === "dark" ||
     (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)
@@ -52,16 +51,14 @@ export default function App() {
   };
 
   const handleRegistrationComplete = (name, mobile) => {
-    // Add the new user to our mock list of registered users
     setRegisteredUsers([...registeredUsers, { name, mobile }]);
     setUserName(name);
-    setProfileImage(""); // Placeholder for profile image
+    setProfileImage("");
     setIsLoggedIn(true);
     triggerPopup("Registration successful! You are now logged in.");
   };
 
   const handleLoginComplete = (name, mobile) => {
-    // This is called from the login component to set the user state
     setUserName(name);
     setIsLoggedIn(true);
     triggerPopup("Login successful!");
@@ -80,7 +77,7 @@ export default function App() {
 
   const ProtectedRoute = ({ children }) => {
     if (!isLoggedIn) {
-      return <Navigate to="/login" replace />; // Redirect to login, not signup
+      return <Navigate to="/login" replace />;
     }
     return children;
   };
@@ -99,9 +96,7 @@ export default function App() {
             toggleMenu={toggleMenu}
             handleLogout={handleLogout}
           />
-
           {showPopup && <Popup message={popupMessage} />}
-
           <Routes>
             <Route
               path="/"
@@ -165,7 +160,7 @@ export default function App() {
               path="/payment"
               element={
                 <ProtectedRoute>
-                  <TokenPayment darkMode={darkMode} />
+                  <PaymentPage darkMode={darkMode} />
                 </ProtectedRoute>
               }
             />

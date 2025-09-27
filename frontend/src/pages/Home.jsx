@@ -8,6 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+// Import the new ServicesMenu component
+import ServicesMenu from "./ServicesMenu";
 
 export default function Home({
   darkMode,
@@ -18,10 +20,12 @@ export default function Home({
   isLoggedIn,
 }) {
   const [city, setCity] = useState("Patna");
+  // State for the active category
+  const [activeCategory, setActiveCategory] = useState("All Services");
   const scrollRef = useRef(null);
   const navigate = useNavigate();
 
-  // Define services with hardcoded strings since react-i18next is not available
+  // Define services with a category property
   const [services, setServices] = useState([
     {
       id: 1,
@@ -29,6 +33,7 @@ export default function Home({
       img: "repairing1.png",
       rating: 4.8,
       price: 299,
+      category: "Home Services"
     },
     {
       id: 2,
@@ -36,6 +41,7 @@ export default function Home({
       img: "repairing2.png",
       rating: 4.9,
       price: 2999,
+      category: "Professional Works"
     },
     {
       id: 3,
@@ -43,6 +49,7 @@ export default function Home({
       img: "https://placehold.co/300x400/525252/FFF?text=Cooking+Services",
       rating: 4.7,
       price: 599,
+      category: "Home Services"
     },
     {
       id: 4,
@@ -50,6 +57,7 @@ export default function Home({
       img: "https://placehold.co/300x200/4287f5/FFF?text=Plumbing",
       rating: 4.6,
       price: 399,
+      category: "Home Services"
     },
     {
       id: 5,
@@ -57,6 +65,7 @@ export default function Home({
       img: "https://placehold.co/300x200/f54291/FFF?text=Electrical",
       rating: 4.8,
       price: 499,
+      category: "Home Services"
     },
     {
       id: 6,
@@ -64,6 +73,31 @@ export default function Home({
       img: "https://placehold.co/300x200/42f55a/FFF?text=Beauty+Services",
       rating: 5.0,
       price: 999,
+      category: "Per day Services"
+    },
+    {
+      id: 7,
+      name: "Web Development",
+      img: "https://placehold.co/300x200/525252/FFF?text=Web+Dev",
+      rating: 4.9,
+      price: 5000,
+      category: "Digital Works"
+    },
+    {
+      id: 8,
+      name: "SEO Services",
+      img: "https://placehold.co/300x200/4287f5/FFF?text=SEO",
+      rating: 4.7,
+      price: 2500,
+      category: "Digital Works"
+    },
+    {
+      id: 9,
+      name: "Medical Emergency",
+      img: "https://placehold.co/300x200/e63946/FFF?text=Medical+Emergency",
+      rating: 5.0,
+      price: 1500,
+      category: "Emergency service"
     },
   ]);
 
@@ -96,10 +130,15 @@ export default function Home({
     }
   };
 
+  // Filter services based on the active category
+  const filteredServices = activeCategory === "All Services"
+    ? services
+    : services.filter(service => service.category === activeCategory);
+
   return (
     <div
       className="bg-gray-50 text-gray-800 dark:bg-black dark:text-white
-                      min-h-screen font-sans relative overflow-hidden transition-colors duration-300"
+                  min-h-screen font-sans relative overflow-hidden transition-colors duration-300"
     >
       {/* Mobile Menu Overlay */}
       <div
@@ -166,49 +205,65 @@ export default function Home({
         {/* Our Services */}
         <section
           className="bg-gray-100 dark:bg-gray-900
-                          py-10 shadow-inner transition-colors duration-300"
+                      py-10 shadow-inner transition-colors duration-300"
         >
           <h2 className="text-3xl font-bold text-center text-blue-800 dark:text-blue-500 mb-6">
             Our Services
           </h2>
+
+          {/* New Services Menu component */}
+          <div className="mb-6">
+            <ServicesMenu
+              activeCategory={activeCategory}
+              onCategoryClick={setActiveCategory}
+            />
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto px-4">
-            {services.map((service) => (
-              <div
-                key={service.id}
-                className="bg-white dark:bg-gray-800
-                              rounded-2xl shadow-md hover:shadow-lg transition-shadow flex flex-col"
-              >
-                <div className="relative">
-                  <img
-                    src={service.img}
-                    alt={service.name}
-                    className="w-full h-48 object-cover rounded-t-2xl"
-                  />
-                  <div className="absolute top-2 right-2 bg-white dark:bg-gray-700 px-2 py-1 rounded-full shadow-md flex items-center gap-1">
-                    <Star size={16} className="text-yellow-500" fill="gold" />
-                    <span className="font-semibold text-sm">
-                      {service.rating}
-                    </span>
+            {/* Use the filteredServices array */}
+            {filteredServices.length > 0 ? (
+              filteredServices.map((service) => (
+                <div
+                  key={service.id}
+                  className="bg-white dark:bg-gray-800
+                            rounded-2xl shadow-md hover:shadow-lg transition-shadow flex flex-col"
+                >
+                  <div className="relative">
+                    <img
+                      src={service.img}
+                      alt={service.name}
+                      className="w-full h-48 object-cover rounded-t-2xl"
+                    />
+                    <div className="absolute top-2 right-2 bg-white dark:bg-gray-700 px-2 py-1 rounded-full shadow-md flex items-center gap-1">
+                      <Star size={16} className="text-yellow-500" fill="gold" />
+                      <span className="font-semibold text-sm">
+                        {service.rating}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-4 flex flex-col flex-grow">
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-3">
+                      {service.name}
+                    </h3>
+                    <div className="mt-auto flex justify-between items-center">
+                      <p className="font-bold text-lg text-gray-900 dark:text-white">
+                        {`Starting from ₹${service.price}`}
+                      </p>
+                      <button
+                        onClick={() => handleBookNowClick(service.name)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-full shadow hover:bg-blue-700 text-sm transition-colors"
+                      >
+                        Book Now →
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="p-4 flex flex-col flex-grow">
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-3">
-                    {service.name}
-                  </h3>
-                  <div className="mt-auto flex justify-between items-center">
-                    <p className="font-bold text-lg text-gray-900 dark:text-white">
-                      {`Starting from ₹${service.price}`}
-                    </p>
-                    <button
-                      onClick={() => handleBookNowClick(service.name)}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-full shadow hover:bg-blue-700 text-sm transition-colors"
-                    >
-                      Book Now →
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="col-span-full text-center text-gray-500 dark:text-gray-400">
+                No services found for this category.
+              </p>
+            )}
           </div>
         </section>
 

@@ -4,13 +4,13 @@ import { MapPin, AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react";
 
 const BookingPage = ({ darkMode }) => {
   const { serviceName } = useParams();
-  const decodedService = decodeURIComponent(serviceName); // ✅ Decode URL param
+  const decodedService = decodeURIComponent(serviceName);
   const navigate = useNavigate();
 
   // Get current date for min attribute on date input
   const today = new Date();
   const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
   const currentDate = `${yyyy}-${mm}-${dd}`;
 
@@ -26,7 +26,7 @@ const BookingPage = ({ darkMode }) => {
 
   const [popup, setPopup] = useState({ show: false, type: "", message: "" });
 
-  // ✅ Pre-fill service name when page loads
+  // Pre-fill service name when page loads
   useEffect(() => {
     if (decodedService) {
       setFormData((prev) => ({ ...prev, service: decodedService }));
@@ -38,7 +38,7 @@ const BookingPage = ({ darkMode }) => {
     setFormData({ ...formData, [name]: value });
   };
   
-  // ✅ New function to handle date change and validate
+  // New function to handle date change and validate
   const handleDateChange = (e) => {
     const selectedDate = e.target.value;
     setFormData({ ...formData, date: selectedDate });
@@ -48,7 +48,7 @@ const BookingPage = ({ darkMode }) => {
     }
   };
   
-  // ✅ New function to handle time change and validate
+  // New function to handle time change and validate
   const handleTimeChange = (e) => {
     const selectedTime = e.target.value;
     const now = new Date();
@@ -61,7 +61,7 @@ const BookingPage = ({ darkMode }) => {
         type: "error",
         message: "🚫 Please select a time in the future.",
       });
-      setFormData({ ...formData, time: "" }); // Clear the invalid time
+      setFormData({ ...formData, time: "" });
       setTimeout(() => setPopup({ show: false, type: "", message: "" }), 3000);
     } else {
       setFormData({ ...formData, time: selectedTime });
@@ -84,7 +84,7 @@ const BookingPage = ({ darkMode }) => {
       return;
     }
     
-    // ✅ Final validation to prevent past bookings
+    // Final validation to prevent past bookings
     const selectedDateTime = new Date(`${date}T${time}`);
     const now = new Date();
     if (selectedDateTime < now) {
@@ -99,7 +99,7 @@ const BookingPage = ({ darkMode }) => {
 
     console.log("Booking submitted:", formData);
 
-    // ✅ Save the new booking to localStorage
+    // Save the new booking to localStorage
     const storedBookings = JSON.parse(localStorage.getItem("bookings")) || [];
     const updatedBookings = [...storedBookings, formData];
     localStorage.setItem("bookings", JSON.stringify(updatedBookings));
@@ -113,7 +113,7 @@ const BookingPage = ({ darkMode }) => {
 
     setTimeout(() => {
       setPopup({ show: false, type: "", message: "" });
-      // ✅ Pass the formData object to the next page as state
+      // Pass the formData object to the next page as state
       navigate("/payment", { state: { formData } });
     }, 2000);
   };
@@ -129,7 +129,7 @@ const BookingPage = ({ darkMode }) => {
           darkMode ? "bg-gray-800" : "bg-white"
         }`}
       >
-        {/* ✅ Back Arrow */}
+        {/* Back Arrow */}
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-4"
@@ -141,7 +141,7 @@ const BookingPage = ({ darkMode }) => {
           COMPLETE YOUR BOOKING
         </h2>
 
-        {/* ✅ Popup Notification */}
+        {/* Popup Notification */}
         {popup.show && (
           <div
             className={`absolute top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-md shadow-lg flex items-center gap-2 ${
@@ -159,7 +159,7 @@ const BookingPage = ({ darkMode }) => {
           </div>
         )}
 
-        {/* ✅ Booking Form */}
+        {/* Booking Form */}
         <form onSubmit={handleSubmit} className="space-y-4 mt-6">
             {/* Name */}
           <div>
@@ -245,16 +245,16 @@ const BookingPage = ({ darkMode }) => {
                 type="date"
                 name="date"
                 value={formData.date}
-                onChange={handleDateChange} // Use new handler
+                onChange={handleDateChange}
                 className="w-1/2 border rounded-md p-2 bg-gray-200"
-                min={currentDate} // Restrict past dates
+                min={currentDate}
                 required
               />
               <input
                 type="time"
                 name="time"
                 value={formData.time}
-                onChange={handleTimeChange} // Use new handler
+                onChange={handleTimeChange}
                 className="w-1/2 border rounded-md p-2 bg-gray-200"
                 required
               />
@@ -289,5 +289,4 @@ const BookingPage = ({ darkMode }) => {
     </div>
   );
 };
-
 export default BookingPage;
