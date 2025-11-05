@@ -1,52 +1,99 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Bell, Moon, User, Search } from "lucide-react";
+import axios from "axios";
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:5000"); // ✅ backend socket URL
 
 const Users = () => {
-  const [filter, setFilter] = useState("Active Jobs");
+  const [filter, setFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [customers, setCustomers] = useState([]);
 
-  const users = [
-    { id: 1, name: "Meera", phone: "98657896", status: "Activate", date: "01/8/2025", actions: 12, image: "https://randomuser.me/api/portraits/women/1.jpg" },
-    { id: 2, name: "Asha", phone: "87654679", status: "Activate", date: "01/8/2025", actions: 6, image: "https://randomuser.me/api/portraits/women/2.jpg" },
-    { id: 3, name: "Neha", phone: "77654688", status: "Suspended", date: "02/8/2025", actions: 9, image: "https://randomuser.me/api/portraits/women/3.jpg" },
-    { id: 4, name: "Priya", phone: "67864378", status: "Activate", date: "03/8/2025", actions: 15, image: "https://randomuser.me/api/portraits/women/4.jpg" },
-  ];
+  // ✅ Fetch customers from backend
+  const fetchCustomers = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/customers");
+      setCustomers(res.data);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+    }
+  };
 
-  const stats = [
-    { title: "Total Users", value: "1,868" },
-    { title: "Active Users", value: "678" },
-    { title: "Suspended Users", value: "56" },
-    { title: "New Signups", value: "67" },
-  ];
+  // ✅ useEffect for initial load + real-time updates
+  useEffect(() => {
+    fetchCustomers();
 
-  const filters = ["Active Jobs", "Suspended", "New", "High Rating", "Low Rating"];
+    // ✅ Listen for socket events (real-time)
+    socket.on("customerAdded", (newCustomer) => {
+      setCustomers((prev) => [...prev, newCustomer]);
+    });
 
-  // ✅ Filter users based on search term
-  const filteredUsers = users.filter((user) =>
-    Object.values(user)
+    socket.on("customerUpdated", (updated) => {
+      setCustomers((prev) =>
+        prev.map((c) => (c._id === updated._id ? updated : c))
+      );
+    });
+
+    socket.on("customerDeleted", (deletedId) => {
+      setCustomers((prev) => prev.filter((c) => c._id !== deletedId));
+    });
+
+    return () => {
+      socket.off("customerAdded");
+      socket.off("customerUpdated");
+      socket.off("customerDeleted");
+    };
+  }, []);
+
+  // ✅ Filter options
+  const filters = ["All", "Active", "Suspended", "New"];
+
+  // ✅ Search + Filter logic
+  const filteredCustomers = customers.filter((customer) => {
+    const matchesSearch = Object.values(customer)
       .join(" ")
       .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
+      .includes(searchTerm.toLowerCase());
+
+    const matchesFilter =
+      filter === "All" || customer.status?.toLowerCase() === filter.toLowerCase();
+
+    return matchesSearch && matchesFilter;
+  });
+
+  // ✅ Statistics section
+  const stats = [
+    { title: "Total Customers", value: customers.length },
+    {
+      title: "Active Customers",
+      value: customers.filter((c) => c.status === "Active").length,
+    },
+    {
+      title: "Suspended Customers",
+      value: customers.filter((c) => c.status === "Suspended").length,
+    },
+    {
+      title: "New Signups",
+      value: customers.filter((c) => {
+        const createdDate = new Date(c.createdAt);
+        const today = new Date();
+        const diff = (today - createdDate) / (1000 * 60 * 60 * 24);
+        return diff < 7;
+      }).length,
+    },
+  ];
 
   return (
     <div className="flex flex-col p-6 bg-gray-50 min-h-screen dark:bg-gray-900 dark:text-white">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-blue-700">Users</h1>
-        <div className="flex items-center space-x-4">
-          <Bell className="w-5 h-5 cursor-pointer" />
-          <Moon className="w-5 h-5 cursor-pointer" />
-          <User className="w-6 h-6 cursor-pointer" />
-        </div>
-      </div>
-
+     
       {/* Search Bar */}
       <div className="flex items-center mb-4 bg-white dark:bg-gray-800 rounded-lg p-2 shadow-sm">
         <Search className="w-5 h-5 text-gray-400 ml-2" />
         <input
           type="text"
-          placeholder="Search by name, ID, phone, or date..."
+          placeholder="Search by name, phone, or date..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full p-2 bg-transparent outline-none ml-2"
@@ -85,7 +132,7 @@ const Users = () => {
         ))}
       </div>
 
-      {/* Users Table */}
+      {/* Customers Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
         <table className="w-full text-left">
           <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-sm">
@@ -93,46 +140,55 @@ const Users = () => {
               <th className="px-4 py-3">Profile</th>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Phone</th>
+              <th className="px-4 py-3">Email</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Reg Date</th>
-              <th className="px-4 py-3">Actions</th>
+              <th className="px-4 py-3">Registered</th>
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => (
+            {filteredCustomers.length > 0 ? (
+              filteredCustomers.map((customer) => (
                 <tr
-                  key={user.id}
+                  key={customer._id}
                   className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                 >
                   <td className="px-4 py-3">
                     <img
-                      src={user.image}
-                      alt={user.name}
+                      src={
+                        customer.image
+                          ? `http://localhost:5000/${customer.image}`
+                          : "https://via.placeholder.com/40"
+                      }
+                      alt={customer.name}
                       className="w-10 h-10 rounded-full object-cover"
                     />
                   </td>
-                  <td className="px-4 py-3">{user.name}</td>
-                  <td className="px-4 py-3">{user.phone}</td>
+                  <td className="px-4 py-3 font-medium">{customer.name}</td>
+                  <td className="px-4 py-3">{customer.phone}</td>
+                  <td className="px-4 py-3">{customer.email}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                        user.status === "Activate"
+                        customer.status === "Active"
                           ? "bg-green-500 text-white"
                           : "bg-red-500 text-white"
                       }`}
                     >
-                      {user.status}
+                      {customer.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3">{user.date}</td>
-                  <td className="px-4 py-3">{user.actions}</td>
+                  <td className="px-4 py-3">
+                    {new Date(customer.createdAt).toLocaleDateString()}
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="text-center py-6 text-gray-500 dark:text-gray-400">
-                  No users found matching "{searchTerm}"
+                <td
+                  colSpan="6"
+                  className="text-center py-6 text-gray-500 dark:text-gray-400"
+                >
+                  No customers found matching "{searchTerm}"
                 </td>
               </tr>
             )}

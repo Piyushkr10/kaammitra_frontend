@@ -26,21 +26,7 @@ const Settings = () => {
   return (
     <div className="p-6 w-full">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-blue-700">Settings</h1>
-        <div className="flex items-center gap-4">
-          <button title="Notifications" className="text-gray-600 dark:text-gray-200 hover:text-blue-600">
-            🔔
-          </button>
-          <button title="Toggle Dark/Light Mode" className="text-gray-600 dark:text-gray-200 hover:text-blue-600">
-            🌙
-          </button>
-          <button title="Profile" className="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
-            👤
-          </button>
-        </div>
-      </div>
-
+   
       {/* Tax & Commission Section */}
       <div className="mb-8 bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow">
         <h2 className="text-xl font-semibold mb-4">Tax & Commission</h2>

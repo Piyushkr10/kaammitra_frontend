@@ -1,28 +1,54 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
+import { JobContext } from "../context/jobContext";
+import axios from "axios";
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:5000");
 
 const Jobs = () => {
+  const { jobs, addJob } = useContext(JobContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("All");
   const [selectedJob, setSelectedJob] = useState(null);
+  const [loadingJob, setLoadingJob] = useState(false);
 
-  const jobsData = [
-    { id: "#tf9086", customer: "Meera", provider: "Sam", category: "Cleaning", status: "Active", date: "01/10/2025" },
-    { id: "#tf9087", customer: "Meera", provider: "Sam", category: "Repair", status: "Pending", date: "01/10/2025" },
-    { id: "#tf9088", customer: "Meera", provider: "Sam", category: "Gardening", status: "Completed", date: "10/10/2025" },
-  ];
+  // Real-time job updates
+  useEffect(() => {
+    socket.on("jobAdded", (job) => {
+      if (job) addJob(job);
+    });
+    return () => socket.off("jobAdded");
+  }, [addJob]);
 
-  const filteredJobs = jobsData.filter((j) => {
+  const filteredJobs = jobs.filter((j) => {
     const matchesSearch =
-      j.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      j.provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      j.id.toLowerCase().includes(searchTerm.toLowerCase());
+      (j.customer || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (j.provider || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (j.jobId || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTab = activeTab === "All" || j.status === activeTab;
     return matchesSearch && matchesTab;
   });
 
+  // View job details
+  const handleView = async (job) => {
+    try {
+      setLoadingJob(true);
+      const res = await axios.get(`http://localhost:5000/api/jobs/${job._id}`);
+      setSelectedJob(res.data);
+    } catch (err) {
+      console.error("Error fetching job details:", err);
+      alert("Error loading job details");
+    } finally {
+      setLoadingJob(false);
+    }
+  };
+
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold text-blue-700 mb-4">Jobs / Bookings</h2>
+      <h2 className="text-2xl font-bold text-blue-700 mb-4">
+        Jobs / Bookings
+      </h2>
+
       <input
         type="text"
         placeholder="Search by Job ID, customer or provider"
@@ -47,6 +73,7 @@ const Jobs = () => {
         ))}
       </div>
 
+      {/* Jobs Table */}
       <div className="overflow-x-auto">
         <table className="min-w-full border border-gray-300 dark:border-gray-600">
           <thead className="bg-gray-100 dark:bg-gray-700">
@@ -61,9 +88,9 @@ const Jobs = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredJobs.map((j, index) => (
-              <tr key={index} className="border-t dark:border-gray-600">
-                <td className="p-2">{j.id}</td>
+            {filteredJobs.map((j) => (
+              <tr key={j._id} className="border-t dark:border-gray-600">
+                <td className="p-2">{j.jobId}</td>
                 <td className="p-2">{j.customer}</td>
                 <td className="p-2">{j.provider}</td>
                 <td className="p-2">{j.category}</td>
@@ -83,10 +110,10 @@ const Jobs = () => {
                 <td className="p-2">{j.date}</td>
                 <td className="p-2">
                   <button
-                    onClick={() => setSelectedJob(j)}
+                    onClick={() => handleView(j)}
                     className="px-3 py-1 bg-blue-500 text-white rounded-md"
                   >
-                    View
+                    {loadingJob ? "Loading..." : "View"}
                   </button>
                 </td>
               </tr>
@@ -100,12 +127,25 @@ const Jobs = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg w-96 relative">
             <h3 className="text-xl font-bold mb-4 text-blue-700">Job Details</h3>
-            <p><strong>ID:</strong> {selectedJob.id}</p>
+
+            {selectedJob.image && (
+              <img
+                src={`http://localhost:5000${selectedJob.image.startsWith("/") ? selectedJob.image : "/" + selectedJob.image}`}
+                alt="Job"
+                className="w-40 h-40 object-cover rounded mb-3 mx-auto"
+              />
+            )}
+
+            <p><strong>ID:</strong> {selectedJob.jobId}</p>
             <p><strong>Customer:</strong> {selectedJob.customer}</p>
             <p><strong>Provider:</strong> {selectedJob.provider}</p>
             <p><strong>Category:</strong> {selectedJob.category}</p>
+            <p><strong>Sub-Service:</strong> {selectedJob.subService}</p>
+            <p><strong>Description:</strong> {selectedJob.description}</p>
+            <p><strong>Requirement:</strong> {selectedJob.requirement}</p>
             <p><strong>Status:</strong> {selectedJob.status}</p>
             <p><strong>Date:</strong> {selectedJob.date}</p>
+
             <button
               onClick={() => setSelectedJob(null)}
               className="mt-4 px-4 py-2 bg-red-500 text-white rounded-md"
