@@ -8,7 +8,7 @@ import Register from "./pages/Register";
 import ProfilePage from "./pages/ProfilePage";
 import ProfileDashboard from "./pages/ProfileDashboard";
 import ProfileJobs from "./pages/Profilejobs";
-import ProfileEarnings from "./pages/ProfileEarnings";
+import ProfileEarnings from "./pages/profileearnings";
 import ProfileNotifications from "./pages/ProfileNotifications";
 import ProfileDetailsPage from "./pages/ProfileDetailsPage";
 

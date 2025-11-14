@@ -1,3 +1,4 @@
+// backend/server.js
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -11,20 +12,20 @@ import authRoutes from "./routes/authRoutes.js";
 import jobRoutes from "./routes/jobRoutes.js";
 import providerRoutes from "./routes/providerRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
-import financeRoutes from "./routes/financeRoutes.js"; // 🧾 new finance route
+import financeRoutes from "./routes/financeRoutes.js";
 
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// --- ensure uploads folder exists ---
+// ensure uploads folder exists
 const uploadsPath = path.join(path.resolve(), "uploads");
 if (!fs.existsSync(uploadsPath)) {
   fs.mkdirSync(uploadsPath, { recursive: true });
   console.log("📁 'uploads' folder created automatically");
 }
 
-// --- CORS ---
+// CORS
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 app.use(
   cors({
@@ -32,36 +33,35 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
 
-// --- serve uploaded images ---
+// body parsers (increase limits for images)
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
+// serve uploads (so frontend can load images like /uploads/filename.jpg)
 app.use("/uploads", express.static(uploadsPath));
 console.log("🖼️ Serving images from:", uploadsPath);
 
-// --- simple root route for sanity check ---
+// root
 app.get("/", (req, res) => {
   res.send("✅ Backend server is running...");
 });
 
-// --- Socket.io setup ---
+// socket.io
 const io = new Server(server, {
   cors: { origin: FRONTEND_ORIGIN, credentials: true },
 });
-
-// attach io instance to app so controllers can emit events
 app.set("io", io);
 
-// --- register routes ---
+// register routes
 app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/providers", providerRoutes);
 app.use("/api/customers", customerRoutes);
-app.use("/api/finance", financeRoutes); // ✅ new Finance API route
+app.use("/api/finance", financeRoutes);
 
-// --- MongoDB connection ---
-const MONGO_URI =
-  process.env.MONGO_URI || "mongodb://127.0.0.1:27017/dashboardDB";
-
+// MongoDB
+const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/dashboardDB";
 mongoose
   .connect(MONGO_URI, {
     useNewUrlParser: true,
@@ -73,7 +73,7 @@ mongoose
     process.exit(1);
   });
 
-// --- Socket events ---
+// socket events
 io.on("connection", async (socket) => {
   console.log("⚡ Socket connected:", socket.id);
 
@@ -90,6 +90,12 @@ io.on("connection", async (socket) => {
   });
 });
 
-// --- Start Server ---
+// error logger (optional)
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({ message: "Internal server error" });
+});
+
+// start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

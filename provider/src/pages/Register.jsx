@@ -1,31 +1,48 @@
+// frontend/src/pages/Register.jsx
 import React, { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+import StepIndicator from "../components/registration/StepIndicator";
 import Step1Personal from "../components/registration/Step1Personal";
 import Step2OTP from "../components/registration/Step2OTP";
 import Step3ServiceDetails from "../components/registration/Step3ServiceDetails";
 import Step4Identity from "../components/registration/Step4Identity";
 import Step5Payment from "../components/registration/Step5Payment";
-import StepIndicator from "../components/registration/StepIndicator";
 
 const Register = ({ setIsAuthenticated }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({});
   const navigate = useNavigate();
-
   const totalSteps = 5;
 
   const nextStep = (data) => {
-    setFormData((prevData) => ({ ...prevData, ...data }));
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
-    }
+    setFormData((prev) => ({ ...prev, ...data }));
+    if (currentStep < totalSteps) setCurrentStep((s) => s + 1);
   };
 
-  const handleSubmit = (data) => {
+  // Final submit -> POST to backend
+  const handleSubmit = async (data) => {
     const finalData = { ...formData, ...data };
-    localStorage.setItem("providerData", JSON.stringify(finalData));
-    setIsAuthenticated(true);
-    navigate("/profile");
+
+    try {
+      const res = await axios.post("http://localhost:5000/api/providers/add", finalData);
+      const created = res.data;
+
+      console.log("Register response:", created); // <-- add this for debugging
+      if (!created || !created._id) {
+        console.warn("Created provider missing _id — backend may not be returning the document.");
+      }
+
+      localStorage.setItem("providerData", JSON.stringify(created));
+      localStorage.setItem("providerId", created._id || created.id || "");
+
+      setIsAuthenticated(true);
+      navigate("/profile");
+    } catch (err) {
+      console.log("Registration error:", err.response?.data || err.message);
+      alert(err.response?.data?.message || "Registration failed");
+    }
   };
 
   const renderStep = () => {
@@ -41,7 +58,7 @@ const Register = ({ setIsAuthenticated }) => {
       case 5:
         return <Step5Payment handleSubmit={handleSubmit} data={formData} />;
       default:
-        return <Navigate to="/" replace />;
+        return null;
     }
   };
 
@@ -51,8 +68,10 @@ const Register = ({ setIsAuthenticated }) => {
         <h1 className="text-2xl font-bold mb-6 text-center text-blue-700 dark:text-blue-400">
           Provider Registration (5 Steps)
         </h1>
+
         <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
-        <div className="mt-8">{renderStep()}</div>
+
+        <div className="mt-6">{renderStep()}</div>
       </div>
     </div>
   );
