@@ -1,27 +1,32 @@
 import Provider from "../models/Provider.js";
 
-// Add provider
 export const addProvider = async (req, res) => {
   try {
+    console.log("POST /api/providers/add - body:", req.body);
+    console.log("POST /api/providers/add - files:", req.files);
+
     const payload = {
-      fullName: req.body.fullName || req.body.name || "",
-      phoneNumber: req.body.phoneNumber || req.body.phone || req.body.mobile || "",
-      email: req.body.email || "",
+      fullName: req.body.fullName || "",
+      phoneNumber: req.body.phoneNumber || "",
+      email: req.body.email && req.body.email.trim() !== "" ? req.body.email : undefined,
       serviceCategory: req.body.serviceCategory || "",
       subService: req.body.subService || "",
       experience: req.body.experience ? Number(req.body.experience) : 0,
       serviceArea: req.body.serviceArea || "",
       pinCode: req.body.pinCode || "",
       languageSpoken: req.body.languageSpoken || "",
-      profilePhoto: req.files?.profilePhoto?.[0]?.filename || "",
-      governmentIDProof: req.files?.governmentIDProof?.[0]?.filename || "",
-      addressProof: req.files?.addressProof?.[0]?.filename || "",
-      skillCertificate: req.files?.skillCertificate?.[0]?.filename || "",
+      profilePhoto: req.files?.profilePhoto?.[0]?.filename || req.body.profilePhoto || "",
+      governmentIDProof: req.files?.governmentIDProof?.[0]?.filename || req.body.governmentIDProof || "",
+      addressProof: req.files?.addressProof?.[0]?.filename || req.body.addressProof || "",
+      skillCertificate: req.files?.skillCertificate?.[0]?.filename || req.body.skillCertificate || "",
       bankAccountNumber: req.body.bankAccountNumber || "",
       ifscCode: req.body.ifscCode || "",
       upiId: req.body.upiId || "",
     };
 
+    // CRITICAL: delete empty/undefined email to avoid duplicate key on sparse index
+    if (!payload.email) delete payload.email;
+    
     if (!payload.fullName || !payload.phoneNumber) {
       return res.status(400).json({ message: "fullName and phoneNumber are required." });
     }
@@ -30,14 +35,22 @@ export const addProvider = async (req, res) => {
     if (exists) return res.status(400).json({ message: "Provider already exists." });
 
     const created = await Provider.create(payload);
+    console.log("Provider created:", created._id);
     return res.status(201).json(created);
   } catch (error) {
     console.error("Error in addProvider:", error);
-    return res.status(500).json({ message: "Server error" });
+    if (error.code === 11000) {
+      console.error("Duplicate key:", error.keyValue);
+      return res.status(400).json({ message: "Duplicate entry", keyValue: error.keyValue });
+    }
+    if (error.name === "ValidationError") {
+      const details = Object.values(error.errors).map((e) => e.message);
+      return res.status(400).json({ message: "Validation error", details });
+    }
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-// Get all providers
 export const getProviders = async (req, res) => {
   try {
     const providers = await Provider.find().sort({ createdAt: -1 });
@@ -48,7 +61,6 @@ export const getProviders = async (req, res) => {
   }
 };
 
-// Get provider by id
 export const getProviderById = async (req, res) => {
   try {
     const provider = await Provider.findById(req.params.id);
@@ -60,7 +72,6 @@ export const getProviderById = async (req, res) => {
   }
 };
 
-// Update provider (status or other fields)
 export const updateProvider = async (req, res) => {
   try {
     const allowed = [

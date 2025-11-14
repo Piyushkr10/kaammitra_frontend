@@ -1,16 +1,23 @@
 // frontend/src/pages/ProfileDetailsPage.jsx
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { Upload, Pencil, CheckCircle } from "lucide-react";
+import { Upload, Pencil, CheckCircle, Eye } from "lucide-react";
 
-const DataField = ({ label, value, isUpload, isTotalEarnings }) => (
+const DataField = ({ label, value, isUpload, isTotalEarnings, onViewClick }) => (
   <div className={`flex justify-between items-center py-2 border-t ${isTotalEarnings ? "mt-4 pt-4 border-t-2" : ""}`}>
     <span className={`text-gray-500 ${isTotalEarnings ? "font-bold" : "font-medium"}`}>{label}</span>
-    <span className={`text-right ${isUpload ? "flex items-center font-semibold" : ""}`}>
+    <span className={`text-right ${isUpload ? "flex items-center font-semibold gap-2" : ""}`}>
       {isUpload && value ? (
         <>
-          <CheckCircle className="mr-1 w-4 h-4 text-green-500" />
-          <span className="text-blue-600">{value}</span>
+          <CheckCircle className="w-4 h-4 text-green-500" />
+          <span className="text-blue-600 text-sm">{value}</span>
+          <button
+            onClick={() => onViewClick?.(value)}
+            className="ml-2 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 flex items-center gap-1"
+            type="button"
+          >
+            <Eye className="w-3 h-3" /> View
+          </button>
         </>
       ) : isUpload ? (
         <span className="text-red-500 flex items-center"><Upload className="mr-1 w-4 h-4" /> Required</span>
@@ -21,16 +28,36 @@ const DataField = ({ label, value, isUpload, isTotalEarnings }) => (
   </div>
 );
 
-const ProfileImage = ({ src, onEdit }) => (
-  <div className="w-full flex flex-col items-center">
-    <div className="w-40 h-40 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden border-4 border-blue-500/50">
-      {src ? <img src={src} alt="profile" className="object-cover w-full h-full" /> : <span className="text-gray-500">No Profile Photo</span>}
+const ProfileImage = ({ src, onEdit, onView }) => {
+  // build full URL if src is just filename
+  const imageUrl = src
+    ? src.startsWith("http")
+      ? src
+      : `http://localhost:5000/uploads/${src}`
+    : null;
+
+  return (
+    <div className="w-full flex flex-col items-center">
+      <div className="w-40 h-40 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden border-4 border-blue-500/50">
+        {imageUrl ? (
+          <img src={imageUrl} alt="profile" className="object-cover w-full h-full" />
+        ) : (
+          <span className="text-gray-500">No Profile Photo</span>
+        )}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <button className="text-blue-500 hover:text-blue-600 font-semibold flex items-center" onClick={onEdit} type="button">
+          <Pencil className="w-4 h-4 mr-1" /> Edit
+        </button>
+        {imageUrl && (
+          <button className="text-blue-500 hover:text-blue-600 font-semibold flex items-center" onClick={() => onView?.(imageUrl)} type="button">
+            <Eye className="w-4 h-4 mr-1" /> View
+          </button>
+        )}
+      </div>
     </div>
-    <button className="mt-2 text-blue-500 hover:text-blue-600 font-semibold flex items-center" onClick={onEdit} type="button">
-      <Pencil className="w-4 h-4 mr-1" /> Edit Profile Photo
-    </button>
-  </div>
-);
+  );
+};
 
 const maskAccountNumber = (accountNumber) => {
   if (!accountNumber || accountNumber.length < 4) return "**********";
@@ -105,15 +132,20 @@ const ProfileDetailsPage = () => {
 
   const handleProfilePhotoEdit = () => profilePhotoInputRef.current.click();
 
+  const handleViewImage = (filenameOrUrl) => {
+    const url = filenameOrUrl.startsWith("http")
+      ? filenameOrUrl
+      : `http://localhost:5000/uploads/${filenameOrUrl}`;
+    window.open(url, "_blank");
+  };
+
   const handleProfilePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // For simplicity, we only set filename. If backend supports uploads, you'd upload file here.
     const updated = { ...mergedData, profilePhoto: file.name };
     setProviderData(updated);
 
-    // Optionally update backend (if you want to persist file name)
     const providerId = localStorage.getItem("providerId");
     if (providerId) {
       try {
@@ -145,23 +177,53 @@ const ProfileDetailsPage = () => {
             <DataField label="Service Category" value={mergedData.serviceCategory} />
             <DataField label="Sub-Service/Expertise" value={mergedData.subService} />
             <DataField label="Years of Experience" value={`${mergedData.experience} years`} />
-            <DataField label="Skill Certificate" value={mergedData.skillCertificate} isUpload />
+            <DataField
+              label="Skill Certificate"
+              value={mergedData.skillCertificate}
+              isUpload
+              onViewClick={handleViewImage}
+            />
             <DataField label="Availability" value={"Full-Time"} />
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow">
             <h2 className="text-xl font-semibold text-blue-600 mb-4">Verification Status</h2>
-            <DataField label="Profile Photo" value={mergedData.profilePhoto} isUpload />
-            <DataField label="Govt. ID Proof" value={mergedData.governmentIDProof} isUpload />
-            <DataField label="Address Proof" value={mergedData.addressProof} isUpload />
+            <DataField
+              label="Profile Photo"
+              value={mergedData.profilePhoto}
+              isUpload
+              onViewClick={handleViewImage}
+            />
+            <DataField
+              label="Govt. ID Proof"
+              value={mergedData.governmentIDProof}
+              isUpload
+              onViewClick={handleViewImage}
+            />
+            <DataField
+              label="Address Proof"
+              value={mergedData.addressProof}
+              isUpload
+              onViewClick={handleViewImage}
+            />
             <DataField label="Background Check" value={mergedData.backgroundVerification} />
           </div>
         </div>
 
         <div className="md:col-span-1 space-y-6">
           <div className="bg-white p-6 rounded-xl shadow flex flex-col items-center">
-            <ProfileImage src={mergedData.profilePhoto} onEdit={handleProfilePhotoEdit} />
-            <input type="file" ref={profilePhotoInputRef} style={{ display: "none" }} accept="image/*" onChange={handleProfilePhotoUpload} />
+            <ProfileImage
+              src={mergedData.profilePhoto}
+              onEdit={handleProfilePhotoEdit}
+              onView={handleViewImage}
+            />
+            <input
+              type="file"
+              ref={profilePhotoInputRef}
+              style={{ display: "none" }}
+              accept="image/*"
+              onChange={handleProfilePhotoUpload}
+            />
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow">

@@ -21,17 +21,45 @@ const Register = ({ setIsAuthenticated }) => {
     if (currentStep < totalSteps) setCurrentStep((s) => s + 1);
   };
 
-  // Final submit -> POST to backend
+  // Final submit -> POST to backend with FormData if files exist
   const handleSubmit = async (data) => {
     const finalData = { ...formData, ...data };
 
     try {
-      const res = await axios.post("http://localhost:5000/api/providers/add", finalData);
+      // Check if any File objects exist
+      const hasFile = Object.values(finalData).some((v) => v instanceof File);
+
+      let res;
+      if (hasFile) {
+        // Send as FormData (multipart/form-data)
+        const fd = new FormData();
+        Object.entries(finalData).forEach(([key, value]) => {
+          if (value === undefined || value === null) return;
+          // If File object, append directly; otherwise stringify objects
+          if (value instanceof File) {
+            fd.append(key, value);
+          } else if (typeof value === "object") {
+            fd.append(key, JSON.stringify(value));
+          } else {
+            fd.append(key, value);
+          }
+        });
+
+        console.log("Sending FormData with files");
+        res = await axios.post("http://localhost:5000/api/providers/add", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } else {
+        // Send as JSON
+        console.log("Sending JSON (no files)");
+        res = await axios.post("http://localhost:5000/api/providers/add", finalData);
+      }
+
       const created = res.data;
 
-      console.log("Register response:", created); // <-- add this for debugging
+      console.log("Register response:", created);
       if (!created || !created._id) {
-        console.warn("Created provider missing _id — backend may not be returning the document.");
+        console.warn("Created provider missing _id");
       }
 
       localStorage.setItem("providerData", JSON.stringify(created));
@@ -40,7 +68,7 @@ const Register = ({ setIsAuthenticated }) => {
       setIsAuthenticated(true);
       navigate("/profile");
     } catch (err) {
-      console.log("Registration error:", err.response?.data || err.message);
+      console.error("Registration error:", err.response?.data || err.message);
       alert(err.response?.data?.message || "Registration failed");
     }
   };
