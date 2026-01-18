@@ -4,7 +4,7 @@ const providerSchema = new mongoose.Schema(
   {
     fullName: { type: String, required: true, trim: true },
     phoneNumber: { type: String, required: true, unique: true, trim: true },
-    email: { type: String, trim: true, default: "" },
+    email: { type: String, trim: true, default: undefined },
 
     serviceCategory: { type: String, trim: true, default: "" },
     subService: { type: String, trim: true, default: "" },
@@ -23,12 +23,20 @@ const providerSchema = new mongoose.Schema(
     upiId: { type: String, default: "" },
 
     backgroundVerification: { type: String, default: "Pending" },
-    status: { type: String, default: "Pending" },
+    // Status: Pending (new) → Active (accepted) or Suspended (blocked)
+    status: { 
+      type: String, 
+      enum: ["Pending", "Active", "Suspended"], 
+      default: "Pending" 
+    },
     jobs: { type: Number, default: 0 },
     rating: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
 
-const Provider = mongoose.model("Provider", providerSchema);
+// create sparse unique index for email (ignore missing)
+providerSchema.index({ email: 1 }, { unique: true, sparse: true });
+
+const Provider = mongoose.models.Provider || mongoose.model("Provider", providerSchema);
 export default Provider;

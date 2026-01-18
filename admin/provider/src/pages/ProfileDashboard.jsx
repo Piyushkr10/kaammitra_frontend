@@ -1,109 +1,330 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StarFill } from "react-bootstrap-icons";
-import ProfileJobs from "./Profilejobs"; // Import the jobs component
+import { Bell, Edit } from "lucide-react";
+import axios from "axios";
+import { io } from "socket.io-client";
+import ProfileJobs from "./Profilejobs";
+
+const API = "http://localhost:5000/api";
+const socket = io("http://localhost:5000", { autoConnect: false });
+
+const STATUS_LABEL = {
+  pending: "Pending",
+  accepted: "Accepted",
+  "in-progress": "In Progress",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  declined: "Declined",
+};
+
+// ---- Provider Info Card ----
+const ProviderInfoCard = ({ provider }) => (
+  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border p-6 mb-6">
+    <div className="flex items-start justify-between">
+      <div className="flex items-center space-x-4">
+        {provider.profilePhoto && (
+          <img
+            src={`/uploads/${provider.profilePhoto}`}
+            alt={provider.fullName}
+            className="w-16 h-16 rounded-full object-cover"
+          />
+        )}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {provider.fullName}
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            {provider.phoneNumber || provider.phone}
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {provider.email}
+          </p>
+        </div>
+      </div>
+      <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
+        <Edit className="w-5 h-5 text-blue-600" />
+      </button>
+    </div>
+  </div>
+);
 
 // ---- Stat Card ----
 const StatCard = ({ title, value, isCurrency = false, onClick }) => (
   <div
     onClick={onClick}
-    className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 flex flex-col justify-center items-center cursor-pointer hover:shadow-lg transition"
+    className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border flex flex-col items-center cursor-pointer"
   >
-    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</p>
+    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+      {title}
+    </p>
     {isCurrency ? (
-      <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+      <p className="text-xl md:text-2xl font-bold">
         Rs {value.toLocaleString("en-IN")}
       </p>
     ) : (
-      <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{value}</p>
+      <p className="text-3xl font-bold text-blue-600">{value}</p>
     )}
-  </div>
-);
-
-// ---- Earnings Graph (Placeholder) ----
-const EarningsGraph = () => (
-  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 col-span-2">
-    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Earnings</h3>
-    <div className="h-64 flex flex-col justify-end relative">
-      <svg className="w-full h-full" viewBox="0 0 500 250" preserveAspectRatio="none">
-        {[10, 20, 30, 40].map((level) => (
-          <g key={level}>
-            <text x="0" y={230 - level * 5} className="text-xs fill-gray-500 dark:fill-gray-400">
-              {level}
-            </text>
-            <line x1="20" y1={230 - level * 5} x2="500" y2={230 - level * 5} stroke="#e5e7eb" strokeDasharray="5,5" />
-          </g>
-        ))}
-        <polyline fill="none" stroke="#3b82f6" strokeWidth="3" points="20,140 120,105 220,125 320,65 420,55" transform="translate(0, -20)" />
-      </svg>
-    </div>
-  </div>
-);
-
-// ---- Overall Ratings ----
-const OverallRatings = ({ rating }) => (
-  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 flex flex-col justify-center items-center h-full">
-    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Overall Ratings</p>
-    <div className="flex items-center space-x-2">
-      <StarFill className="text-4xl text-yellow-500" />
-      <p className="text-5xl font-bold text-gray-900 dark:text-white">{rating}</p>
-    </div>
-  </div>
-);
-
-// ---- Quick Actions ----
-const QuickActions = () => (
-  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 flex flex-col space-y-3 h-full">
-    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">Quick actions</h3>
-    <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-lg transition">Accept new job</button>
-    <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-lg transition">Add services</button>
-    <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-lg transition">Withdraw Earnings</button>
   </div>
 );
 
 // ---- Main Dashboard ----
 const ProfileDashboard = () => {
-  const [showJobs, setShowJobs] = useState(null); // "Active Jobs" or "Pending Requests"
-  const [counts, setCounts] = useState({ active: 0, pending: 0 }); // Dynamic counts
+  const [showJobs, setShowJobs] = useState(null);
+  const [counts, setCounts] = useState({
+    active: 0,
+    pending: 0,
+    completed: 0,
+  });
+  const [allJobs, setAllJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [provider, setProvider] = useState(null);
+
+  // Fetch provider data from localStorage/backend
+  useEffect(() => {
+    const d = localStorage.getItem("providerData");
+    if (d) try { setProvider(JSON.parse(d)); } catch(e){ console.error(e); }
+  }, []);
+
+  // Fetch jobs from backend
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("providerToken") || localStorage.getItem("token");
+      if (token) axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      let res = await axios.get(`${API}/bookings`).catch(() => null);
+      if (!res || !res.data) res = await axios.get(`${API}/jobs`).catch(() => null);
+      if (!res) { setAllJobs([]); setCounts({ active:0,pending:0,completed:0 }); return; }
+
+      let raw = Array.isArray(res.data) ? res.data : (Array.isArray(res.data.bookings) ? res.data.bookings : (Array.isArray(res.data.data) ? res.data.data : []));
+
+      const normalized = raw.map((r) => {
+        const b = { ...r };
+        if (!b._id && b.id) b._id = b.id.$oid ?? b.id;
+        if (b._id && typeof b._id === "object") b._id = b._id.$oid ?? b._id;
+        b.status = (b.status||"").toString().toLowerCase();
+        if (b.date) {
+          if (typeof b.date === "object") b.date = new Date(b.date.$date ?? b.date);
+          else b.date = new Date(b.date);
+        }
+        return b;
+      }).filter(Boolean);
+
+      // enforce provider.serviceArea === booking.city (case-insensitive)
+      let providerDataLocal = provider;
+      try { providerDataLocal = providerDataLocal || JSON.parse(localStorage.getItem("providerData") || "null"); } catch(e) { providerDataLocal = providerDataLocal || null; }
+
+      const serviceArea = providerDataLocal?.serviceArea ? String(providerDataLocal.serviceArea).trim().toLowerCase() : null;
+
+      const filteredByArea = serviceArea
+        ? normalized.filter((b) => ((b.city || "").toString().trim().toLowerCase()) === serviceArea)
+        : []; // if provider has no serviceArea, show 0 bookings per requirement
+
+      setAllJobs(filteredByArea);
+
+      setCounts({
+        active: filteredByArea.filter((j) => ["accepted","in-progress"].includes(j.status)).length,
+        pending: filteredByArea.filter((j) => j.status==="pending").length,
+        completed: filteredByArea.filter((j) => j.status==="completed").length,
+      });
+    } catch (err) {
+      console.error("Error fetching jobs:", err);
+      setAllJobs([]);
+      setCounts({ active:0,pending:0,completed:0 });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch and socket setup
+  useEffect(() => {
+    fetchJobs();
+    const token = localStorage.getItem("providerToken") || localStorage.getItem("token");
+    if (token) socket.auth = { token };
+    if (!socket.connected) socket.connect();
+
+    const onAdd = (p) => {
+      // normalize then check serviceArea before adding
+      const b = normalizeForDashboard(p);
+      let providerDataLocal = provider;
+      try { providerDataLocal = providerDataLocal || JSON.parse(localStorage.getItem("providerData") || "null"); } catch(e) { providerDataLocal = providerDataLocal || null; }
+      const serviceArea = providerDataLocal?.serviceArea ? String(providerDataLocal.serviceArea).trim().toLowerCase() : null;
+      if (!serviceArea) return; // don't add if provider has no serviceArea
+      if (((b.city || "").toString().trim().toLowerCase()) === serviceArea) {
+        setAllJobs((prev) => [b, ...(prev || [])]);
+        setCounts((prev) => ({
+          ...prev,
+          pending: prev.pending + (b.status === "pending" ? 1 : 0),
+          active: prev.active + (["accepted","in-progress"].includes(b.status) ? 1 : 0),
+          completed: prev.completed + (b.status === "completed" ? 1 : 0),
+        }));
+      }
+    };
+    const onUpd = (p) => {
+      const b = normalizeForDashboard(p);
+      let providerDataLocal = provider;
+      try { providerDataLocal = providerDataLocal || JSON.parse(localStorage.getItem("providerData") || "null"); } catch(e) { providerDataLocal = providerDataLocal || null; }
+      const serviceArea = providerDataLocal?.serviceArea ? String(providerDataLocal.serviceArea).trim().toLowerCase() : null;
+
+      if (!serviceArea) {
+        // provider has no serviceArea -> ensure no jobs shown
+        setAllJobs([]);
+        setCounts({ active:0,pending:0,completed:0 });
+        return;
+      }
+
+      if (((b.city || "").toString().trim().toLowerCase()) === serviceArea) {
+        setAllJobs((prev) => prev.map((j) => (j._id === (b._id || b.id?.$oid) ? b : j)));
+        // recompute counts for safety
+        setCounts((cur) => {
+          const arr = (prev => {
+            // compute using latest prev with replacement
+            const p = (typeof prev === "function" ? prev() : prev) || [];
+            return p.map((j) => (j._id === (b._id || b.id?.$oid) ? b : j));
+          })(setAllJobs); // note: recompute below anyway
+          const active = arr.filter((j) => ["accepted","in-progress"].includes(j.status)).length;
+          const pending = arr.filter((j) => j.status === "pending").length;
+          const completed = arr.filter((j) => j.status === "completed").length;
+          return { active, pending, completed };
+        });
+      } else {
+        // updated booking moved out of provider area -> remove it
+        setAllJobs((prev) => (prev || []).filter((j) => j._id !== (b._id || b.id?.$oid)));
+        setCounts((prev) => {
+          // recompute counts conservatively
+          const arr = (allJobs || []).filter((j) => j._id !== (b._id || b.id?.$oid));
+          return {
+            active: arr.filter((j) => ["accepted","in-progress"].includes(j.status)).length,
+            pending: arr.filter((j) => j.status === "pending").length,
+            completed: arr.filter((j) => j.status === "completed").length,
+          };
+        });
+      }
+    };
+    function normalizeForDashboard(r){
+      const b = {...r};
+      if (!b._id && b.id) b._id = b.id.$oid ?? b.id;
+      if (b._id && typeof b._id === "object") b._id = b._id.$oid ?? b._id;
+      b.status = (b.status||"").toString().toLowerCase();
+      if (b.date) {
+        if (typeof b.date === "object") b.date = new Date(b.date.$date ?? b.date);
+        else b.date = new Date(b.date);
+      }
+      return b;
+    }
+
+    socket.on("bookingAdded", onAdd);
+    socket.on("bookingUpdated", onUpd);
+    socket.on("jobAdded", onAdd);
+    socket.on("jobUpdated", onUpd);
+
+    return () => {
+      socket.off("bookingAdded", onAdd);
+      socket.off("bookingUpdated", onUpd);
+      socket.off("jobAdded", onAdd);
+      socket.off("jobUpdated", onUpd);
+      try { socket.disconnect(); } catch(e){}
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (showJobs) {
     return (
       <ProfileJobs
         defaultTab={showJobs}
         onBack={() => setShowJobs(null)}
-        onCountsUpdate={setCounts} // Update counts dynamically
+        onCountsUpdate={setCounts}
       />
     );
   }
 
   return (
     <div className="flex-1 p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      {/* Provider Info */}
+      {provider && <ProviderInfoCard provider={provider} />}
+
       {/* Top Bar */}
       <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-2">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Provider name</h2>
-          <span className="text-green-500">✓</span>
-          <span className="bg-gray-300 dark:bg-gray-600 text-xs text-gray-800 dark:text-gray-200 py-1 px-3 rounded-full font-medium">
-            complete profile
-          </span>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          Dashboard Overview
+        </h2>
+        <div className="relative">
+          <button className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition">
+            <Bell className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+            {counts.pending > 0 && (
+              <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {counts.pending > 9 ? "9+" : counts.pending}
+              </span>
+            )}
+          </button>
         </div>
       </div>
+
+      {loading && (
+        <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
+          Loading real-time jobs...
+        </div>
+      )}
 
       {/* Dashboard Grid */}
-      <div className="grid grid-cols-3 gap-6">
-        {/* Stat Cards */}
-        <StatCard title="Pending Requests" value={counts.pending} onClick={() => setShowJobs("Pending Requests")} />
-        <StatCard title="Active jobs" value={counts.active} onClick={() => setShowJobs("Active Jobs")} />
+      <div className="grid grid-cols-3 gap-6 mb-6">
+        <StatCard
+          title="Pending Requests"
+          value={counts.pending}
+          onClick={() => setShowJobs("Pending Requests")}
+        />
+        <StatCard
+          title="Active Jobs"
+          value={counts.active}
+          onClick={() => setShowJobs("Active Jobs")}
+        />
         <StatCard title="Total Income" value={1589} isCurrency={true} />
-
-        {/* Earnings + Right Column */}
-        <div className="col-span-3 grid grid-cols-3 gap-6">
-          <EarningsGraph />
-          <div className="col-span-1 flex flex-col space-y-6">
-            <OverallRatings rating={3} />
-            <QuickActions />
-          </div>
-        </div>
       </div>
+
+      {/* Recent Jobs */}
+      {allJobs.length > 0 && (
+        <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md border p-6">
+          <h3 className="text-lg font-semibold mb-4">Recent Bookings</h3>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {allJobs.slice(0, 5).map((job) => (
+              <div
+                key={job._id}
+                className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex justify-between items-center"
+              >
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {job.serviceType ||
+                      (job.service && job.service.serviceName) ||
+                      "Service"}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Rs {job.price?.toLocaleString() || "—"} • {job.city}
+                  </p>
+                </div>
+                <span
+                  className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                    ["accepted", "in-progress"].includes(job.status)
+                      ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                      : job.status === "pending"
+                      ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+                      : "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                  }`}
+                >
+                  {STATUS_LABEL[job.status] || job.status}
+                </span>
+              </div>
+            ))}
+          </div>
+          {allJobs.length > 5 && (
+            <button
+              onClick={() => setShowJobs("Active Jobs")}
+              className="mt-4 w-full text-center py-2 text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+            >
+              View all bookings ({allJobs.length})
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

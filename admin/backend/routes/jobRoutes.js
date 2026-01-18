@@ -1,23 +1,32 @@
 // routes/jobRoutes.js
 import express from "express";
 import multer from "multer";
-import { createJob, getJobs, getJobById, updateJobStatus } from "../controllers/jobController.js";
+import {
+  createJob,
+  getJobs,
+  getJobById,
+  updateJobStatus,
+} from "../controllers/jobController.js";
 
 const router = express.Router();
 
-// File upload config
+// File upload config for job creation (if used)
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
 });
 const upload = multer({ storage });
 
-// Routes
+// create job (supports file upload via field 'image' or JSON imageUrl)
 router.post("/", upload.single("image"), createJob);
+
+// get bookings/jobs (now backed by Booking when available)
 router.get("/", getJobs);
+
+// get by id (booking or job)
 router.get("/:id", getJobById);
 
-// Optional: update status (e.g., mark completed)
+// update status (booking or job)
 router.patch("/:id/status", updateJobStatus);
 
 export default router;

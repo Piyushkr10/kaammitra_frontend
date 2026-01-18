@@ -1,4 +1,4 @@
-// routes/customerRoutes.js
+// backend/routes/customerRoutes.js
 import express from "express";
 import multer from "multer";
 import {

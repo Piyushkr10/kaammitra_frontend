@@ -1,4 +1,3 @@
-// backend/server.js
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -61,7 +60,7 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/finance", financeRoutes);
 
 // MongoDB
-const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/dashboardDB";
+const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/dashboardApp";
 mongoose
   .connect(MONGO_URI, {
     useNewUrlParser: true,

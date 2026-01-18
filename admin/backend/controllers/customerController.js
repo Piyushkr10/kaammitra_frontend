@@ -1,30 +1,49 @@
-// controllers/customerController.js
+// backend/controllers/customerController.js
 import Customer from "../models/Customer.js";
 
 /**
  * Create a new customer (supports image upload via multer)
- * Emits 'customerCreated' and updates 'customerCount'
+ * Emits 'customerAdded' and updates 'customerCount'
  */
 export const createCustomer = async (req, res) => {
   try {
     const io = req.app.get("io");
-    const { name, phone, email, status, joined, actions } = req.body;
+    const { name, phone, email, status, joined, actions, address, city, state } = req.body;
+    const normalizedPhone = phone?.toString().replace(/\s+/g, "");
+
+    if (!name || !normalizedPhone) {
+      return res.status(400).json({ message: "Name and phone are required." });
+    }
+
+    // Check if phone exists and is suspended
+    const existing = await Customer.findOne({ phone: normalizedPhone });
+    if (existing && existing.status === "Suspended") {
+      return res.status(400).json({ message: "This phone number is suspended. Contact admin." });
+    }
+
+    // Prevent duplicate registration (optional): If phone already exists and active, reject
+    if (existing && existing.status !== "Suspended") {
+      return res.status(400).json({ message: "Phone number already registered." });
+    }
 
     const customer = new Customer({
       name,
-      phone,
+      phone: normalizedPhone,
       email,
       status: status || "Active",
       joined: joined || new Date().toLocaleDateString(),
       actions: actions ? Number(actions) : 0,
       image: req.file ? `/uploads/${req.file.filename}` : undefined,
+      address,
+      city,
+      state,
     });
 
     await customer.save();
 
     // emit real-time events
     if (io) {
-      io.emit("customerCreated", customer);
+      io.emit("customerAdded", customer);
       const count = await Customer.countDocuments();
       io.emit("customerCount", { count });
     }
@@ -75,6 +94,8 @@ export const updateCustomer = async (req, res) => {
 
     if (io) {
       io.emit("customerUpdated", customer);
+      const count = await Customer.countDocuments();
+      io.emit("customerCount", { count });
     }
 
     return res.json(customer);

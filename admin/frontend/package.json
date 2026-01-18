@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "src/index.jsx", 
+  "main": "src/index.jsx",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,12 +12,12 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
-    "framer-motion": "^12.23.12",
+    "framer-motion": "^12.23.24",
     "i18next": "^25.3.6",
     "lucide-react": "^0.539.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-i18next": "^15.6.1",
+    "react-i18next": "^15.7.4",
     "react-router-dom": "^7.8.0"
   },
   "devDependencies": {

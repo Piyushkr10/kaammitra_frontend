@@ -1,10 +1,13 @@
 import express from "express";
+
 import multer from "multer";
 import {
   addProvider,
   getProviders,
+  getActiveProviders,
   getProviderById,
   updateProvider,
+  getProviderByPhone,
 } from "../controllers/providerController.js";
 
 const router = express.Router();
@@ -29,6 +32,8 @@ router.post(
 );
 
 router.get("/", getProviders);
+router.get("/active", getActiveProviders);
+router.get("/phone/:phoneNumber", getProviderByPhone);
 router.get("/:id", getProviderById);
 router.put("/:id", updateProvider);
 
